@@ -12,6 +12,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@rolldown/binding-wasm32-wasi": "1.0.0",
     "@electric-sql/pglite": "^0.5.10",
     "@google/genai": "^2.4.0",
     "@supabase/supabase-js": "^2.118.0",
