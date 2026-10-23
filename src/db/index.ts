@@ -1,12 +1,3 @@
-import { drizzle as drizzlePgLite } from 'drizzle-orm/pglite';
-import { drizzle as drizzleNodePg } from 'drizzle-orm/node-postgres';
-import { PGlite } from '@electric-sql/pglite';
-import pg from 'pg';
-import * as schema from './schema.ts';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
-
 declare global {
   var _drizzleDb: any | undefined;
   var _pgPool: pg.Pool | undefined;
@@ -172,38 +163,30 @@ CREATE TABLE IF NOT EXISTS platform_settings (
 );
 `;
 
-export const DEFAULT_SUPABASE_POSTGRES_URL =
-  'postgresql://postgres:9934886605dilD@db.sdwohzszgondniptbktd.supabase.co:5432/postgres';
 
 const databaseUrl =
   process.env.DATABASE_URL ||
-  process.env.SUPABASE_DB_URL ||
-  DEFAULT_SUPABASE_POSTGRES_URL;
+  process.env.SUPABASE_DB_URL;
 
-let activeDb: any;
-let activePool: any;
-
-try {
-  if (databaseUrl) {
-    // Direct PostgreSQL connection to live Supabase database
-    if (!global._pgPool) {
-      global._pgPool = new pg.Pool({
-        connectionString: databaseUrl,
-        ssl: { rejectUnauthorized: false },
-        connectionTimeoutMillis: 7000,
-      });
-      global._pgPool.on('error', (err: any) => {
-        console.warn('Supabase PG pool background notice:', err?.message || err);
-      });
-    }
-    activePool = global._pgPool;
-    activeDb = drizzleNodePg(activePool, { schema });
-  }
-} catch (e: any) {
-  console.warn('Direct PostgreSQL init notice, using fallback:', e?.message || e);
+if (!databaseUrl) {
+  throw new Error("Missing DATABASE_URL environment variable");
 }
 
-if (!activeDb) {
+if (!global._pgPool) {
+  global._pgPool = new pg.Pool({
+    connectionString: databaseUrl,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+  });
+
+  global._pgPool.on("error", (err: Error) => {
+    console.error("Supabase database pool error:", err.message);
+  });
+}
+
+const activePool = global._pgPool;
+const activeDb = drizzleNodePg(activePool, { schema });
+ {
   // Resilient in-memory PGlite fallback
   if (!global._pgliteClient) {
     global._pgliteClient = new PGlite();
