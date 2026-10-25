@@ -6,7 +6,6 @@ import crypto from 'crypto';
 import https from 'https';
 import * as dotenv from 'dotenv';
 import { and, asc, desc, eq } from 'drizzle-orm';
-import { createServer as createViteServer } from 'vite';
 import { db } from './src/db/index.ts';
 import {
   activityLogs,
@@ -1888,6 +1887,7 @@ app.post(
 // ============================================================================
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true, hmr: false },
       appType: 'spa',
